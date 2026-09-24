@@ -1,0 +1,32 @@
+TASTY ULEAM - ESTADO DEL FRONTEND
+=================================
+
+Estado actual
+-------------
+- Frontend construido con React, TypeScript, Vite y React Router.
+- Navegación para inicio, sedes, autenticación y administración.
+- Persistencia temporal con localStorage y sessionStorage.
+- Menús, pedidos y reservas disponibles para pruebas locales.
+- Integraciones externas y despliegue automático retirados del proyecto.
+
+Estructura relevante
+--------------------
+- src/vistas: pantallas principales.
+- src/componets: componentes reutilizables.
+- src/services: servicios locales temporales.
+- src/types: tipos del dominio.
+- src/styles: estilos de la aplicación.
+
+Próxima etapa
+-------------
+Construir el backend NestJS de acuerdo con la rúbrica:
+- Módulos, controladores y servicios separados.
+- PostgreSQL con TypeORM.
+- CRUD persistente para el recurso principal.
+- DTOs y validación global.
+- Respuestas HTTP y manejo centralizado de errores.
+- README, commits y evidencias de pruebas.
+
+Regla de migración
+------------------
+Los servicios locales deben mantenerse hasta que cada flujo tenga su endpoint funcional. Así se conserva la interfaz mientras se incorpora el backend sin romper el sistema.
