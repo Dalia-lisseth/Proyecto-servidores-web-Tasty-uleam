@@ -3,11 +3,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Usuario } from './entities/usuario.entity';
 
@@ -49,6 +51,28 @@ export class UsuariosService {
     });
 
     return usuarios.map((usuario) => this.toPublic(usuario));
+  }
+
+  async login(loginUsuarioDto: LoginUsuarioDto) {
+    const email = loginUsuarioDto.email.toLowerCase();
+    const usuario = await this.usuariosRepository
+      .createQueryBuilder('usuario')
+      .addSelect('usuario.password')
+      .where('usuario.email = :email', { email })
+      .getOne();
+
+    if (!usuario || !(await bcrypt.compare(loginUsuarioDto.password, usuario.password))) {
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
+    }
+
+    if (!usuario.activo) {
+      throw new UnauthorizedException('La cuenta está desactivada');
+    }
+
+    return {
+      message: 'Inicio de sesión exitoso',
+      usuario: this.toPublic(usuario),
+    };
   }
 
   async findOne(id: number): Promise<UsuarioPublico> {

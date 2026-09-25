@@ -1,60 +1,61 @@
 # Tasty Uleam
 
-Frontend de la plataforma universitaria de comidas Tasty Uleam. Permite explorar las sedes, consultar menús, registrar pedidos y gestionar reservas desde una interfaz React responsive.
+Plataforma universitaria de comidas para consultar menús por sede, registrar usuarios y preparar los flujos de pedidos y reservas.
 
-## Estado actual
+## Estructura
 
-- React 19, TypeScript y Vite.
-- React Router para la navegación.
-- Servicios locales basados en `localStorage` y `sessionStorage`.
-- Menús, pedidos, reservas y autenticación preparados para sustituirse progresivamente por la API del backend.
-- Sin proveedor externo de base de datos ni despliegue automático configurado en este repositorio.
+```text
+.
+├── frontend/    # React, Vite y TypeScript
+└── backend/     # NestJS, TypeORM y PostgreSQL
+```
 
 ## Inicio rápido
 
-Requisitos: Node.js 18 o superior.
+Requisitos: Node.js 18 o superior y PostgreSQL.
+
+### Frontend
 
 ```bash
-npm install
+cd frontend
+npm ci
 npm run dev
 ```
 
-La aplicación estará disponible en la URL que indique Vite, normalmente `http://localhost:5173`.
+La aplicación estará disponible normalmente en `http://localhost:5173`.
 
-## Comandos
+### Backend
 
 ```bash
-npm run dev       # Servidor de desarrollo
-npm run build     # Compilación de producción
-npm run preview   # Previsualización del build
-npm run lint      # Revisión estática
+cd backend
+npm ci
 ```
 
-## Rutas
+Copia `.env.example` como `.env` y completa las credenciales locales de PostgreSQL. Después inicia la API:
 
-| Ruta | Descripción |
-| --- | --- |
-| `/` | Inicio con sedes y menú destacado |
-| `/registro` | Registro de usuarios |
-| `/login` | Inicio de sesión |
-| `/sede/:sedeId` | Menú, pedidos y reservas de una sede |
-| `/admin/login` | Acceso al administrador |
-| `/admin/panel` | Panel de administración |
-
-## Estructura principal
-
-```text
-src/
-├── assets/       # Imágenes y recursos
-├── componets/    # Componentes React
-├── services/     # Persistencia local temporal
-├── styles/       # Estilos globales
-├── types/        # Tipos del dominio
-├── vistas/       # Pantallas de la aplicación
-├── App.tsx       # Rutas principales
-└── main.tsx      # Entrada de la aplicación
+```bash
+npm run start:dev
 ```
 
-## Próximo paso
+La API estará disponible en `http://localhost:3000`.
 
-El siguiente trabajo es crear el backend NestJS con módulos, controladores, servicios, DTOs, validación, PostgreSQL y TypeORM. Los servicios actuales deben conservarse hasta migrar cada flujo a la API, para evitar romper la interfaz durante la transición.
+## Validación
+
+```bash
+# En frontend/
+npm run build
+
+# En backend/
+npm run build
+npm test -- --runInBand
+```
+
+## Estado del proyecto
+
+- El recurso principal del backend es `MenuItem`.
+- El CRUD de menú está implementado con PostgreSQL y TypeORM.
+- El módulo de usuarios incluye registro, login y CRUD.
+- Pedidos y reservas están preparados como módulos para las siguientes etapas.
+- Las credenciales reales se mantienen en `.env`, que no se publica.
+
+Consulta la documentación específica del backend en [backend/README.md](backend/README.md).

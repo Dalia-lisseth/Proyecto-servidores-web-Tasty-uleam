@@ -9,6 +9,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UsuariosService } from './usuarios.service';
 
@@ -24,6 +25,11 @@ export class UsuariosController {
   @Get()
   findAll() {
     return this.usuariosService.findAll();
+  }
+
+  @Post('login')
+  login(@Body() loginUsuarioDto: LoginUsuarioDto) {
+    return this.usuariosService.login(loginUsuarioDto);
   }
 
   @Get(':id')
