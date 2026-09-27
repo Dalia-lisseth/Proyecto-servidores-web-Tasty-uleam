@@ -1,18 +1,18 @@
 # Backend Tasty Uleam
 
-API REST desarrollada con NestJS para administrar el menú de Tasty Uleam. El recurso principal de esta etapa es `MenuItem`, persistido en PostgreSQL mediante TypeORM.
+API REST desarrollada con NestJS para administrar el menú, usuarios, pedidos y reservas de Tasty Uleam. Los recursos `MenuItem`, `Usuario`, `Pedido` y `Reserva` se persisten en PostgreSQL mediante TypeORM.
 
 ## 1. Definición del proyecto
 
-Tasty Uleam centraliza la oferta de alimentos de sus sedes universitarias. La API permite administrar los productos del menú y conservarlos aunque la aplicación se reinicie.
+Tasty Uleam centraliza la oferta de alimentos de sus sedes universitarias. La API permite administrar los productos del menú, los usuarios, los pedidos que realizan y las reservas que registran, conservando todo aunque la aplicación se reinicie.
 
 ### Usuarios previstos
 
-- Clientes que consultan productos y sedes.
+- Clientes que consultan productos, sedes, realizan pedidos y hacen reservas.
 - Personal administrador que gestiona el menú.
-- Equipo del proyecto que ampliará posteriormente pedidos y reservas.
+- Equipo del proyecto que conectará esta API con el frontend.
 
-### Entidades previstas
+### Entidades
 
 ```mermaid
 erDiagram
@@ -53,11 +53,11 @@ erDiagram
     USUARIO ||--o{ RESERVA : registra
 ```
 
-En esta etapa están implementadas las entidades `Usuario` y `MenuItem`. `Pedido` y `Reserva` quedan como parte de la evolución prevista.
+En esta etapa están implementadas las cuatro entidades: `Usuario`, `MenuItem`, `Pedido` y `Reserva`, con sus relaciones (un pedido pertenece a un usuario e incluye varios productos del menú; una reserva puede asociarse opcionalmente a un usuario registrado).
 
 ## 2. Arquitectura NestJS
 
-Cada recurso se organiza en módulo, controlador, servicio, DTO y entidad cuando corresponde:
+Cada recurso se organiza en módulo, controlador, servicio, DTO y entidad:
 
 ```text
 src/
@@ -73,8 +73,18 @@ src/
 │   ├── usuarios.controller.ts
 │   ├── usuarios.module.ts
 │   └── usuarios.service.ts
-├── pedidos/pedidos.module.ts
-└── reservas/reservas.module.ts
+├── pedidos/
+│   ├── dto/
+│   ├── entities/
+│   ├── pedidos.controller.ts
+│   ├── pedidos.module.ts
+│   └── pedidos.service.ts
+└── reservas/
+    ├── dto/
+    ├── entities/
+    ├── reservas.controller.ts
+    ├── reservas.module.ts
+    └── reservas.service.ts
 ```
 
 Los controladores reciben las peticiones HTTP y delegan validación, reglas y persistencia a los servicios.
@@ -165,6 +175,61 @@ Content-Type: application/json
 
 Las contraseñas se almacenan con `bcryptjs` y no se incluyen en las respuestas. Esta etapa no exige tokens JWT.
 
+## Endpoints de pedidos
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| POST | `/pedidos` | Crea un pedido (calcula el total según los productos incluidos) |
+| GET | `/pedidos` | Lista todos los pedidos |
+| GET | `/pedidos/:id` | Consulta un pedido |
+| PATCH | `/pedidos/:id` | Actualiza parcialmente un pedido |
+| DELETE | `/pedidos/:id` | Elimina un pedido |
+
+El campo `total` se calcula automáticamente sumando el precio de los `itemIds` enviados; no se envía manualmente. El `estado` por defecto es `pendiente` y admite: `pendiente`, `en preparacion`, `listo`, `entregado`, `cancelado`.
+
+### Ejemplo de creación
+
+```http
+POST http://localhost:3000/pedidos
+Content-Type: application/json
+```
+
+```json
+{
+  "usuarioId": 1,
+  "sede": "Manta",
+  "itemIds": [1, 2]
+}
+```
+
+## Endpoints de reservas
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| POST | `/reservas` | Crea una reserva |
+| GET | `/reservas` | Lista todas las reservas |
+| GET | `/reservas/:id` | Consulta una reserva |
+| PATCH | `/reservas/:id` | Actualiza parcialmente una reserva |
+| DELETE | `/reservas/:id` | Elimina una reserva |
+
+El campo `usuarioId` es opcional, para permitir reservas de personas no registradas. El `estado` por defecto es `pendiente` y admite: `pendiente`, `confirmada`, `cancelada`.
+
+### Ejemplo de creación
+
+```http
+POST http://localhost:3000/reservas
+Content-Type: application/json
+```
+
+```json
+{
+  "nombre": "Karla",
+  "email": "karla@ejemplo.com",
+  "fechaReserva": "2026-10-05",
+  "sede": "Manta"
+}
+```
+
 ## Pruebas
 
 ```bash
@@ -172,7 +237,7 @@ npm run build
 npm test -- --runInBand
 ```
 
-La suite actual comprueba la creación de los componentes principales. Las pruebas manuales del CRUD seran ejecutadas con Thunder Client
+La suite actual comprueba la creación de los componentes principales de los cuatro módulos. Las pruebas manuales del CRUD se ejecutan con Thunder Client.
 
 ### Checklist de evidencia manual
 
@@ -184,4 +249,6 @@ La suite actual comprueba la creación de los componentes principales. Las prueb
 - [ ] Un JSON inválido devuelve `400`.
 - [ ] Un identificador inexistente devuelve `404`.
 - [ ] El registro permanece después de reiniciar la API.
-- [ ] pgAdmin muestra las tablas `public.menu_items` y `public.usuarios`.
+- [ ] `POST /pedidos` calcula el total y crea el registro con `201`.
+- [ ] `POST /reservas` crea el registro con `201` y `estado` en `pendiente`.
+- [ ] pgAdmin muestra las tablas `public.menu_items`, `public.usuarios`, `public.pedidos` y `public.reservas`.
