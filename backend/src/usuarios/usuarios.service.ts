@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -20,6 +21,7 @@ export class UsuariosService {
   constructor(
     @InjectRepository(Usuario)
     private readonly usuariosRepository: Repository<Usuario>,
+    private readonly jwtService: JwtService,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto): Promise<UsuarioPublico> {
@@ -71,6 +73,10 @@ export class UsuariosService {
 
     return {
       message: 'Inicio de sesión exitoso',
+      access_token: await this.jwtService.signAsync({
+        sub: usuario.id,
+        email: usuario.email,
+      }),
       usuario: this.toPublic(usuario),
     };
   }
