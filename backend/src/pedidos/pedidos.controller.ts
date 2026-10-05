@@ -7,7 +7,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
 import { Pedido } from './entities/pedido.entity';
@@ -18,6 +20,7 @@ export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Body() createPedidoDto: CreatePedidoDto): Promise<Pedido> {
     return this.pedidosService.create(createPedidoDto);
   }
@@ -33,6 +36,7 @@ export class PedidosController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePedidoDto: UpdatePedidoDto,
@@ -41,6 +45,7 @@ export class PedidosController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.pedidosService.remove(id);
   }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MenuModule } from './menu/menu.module';
@@ -14,6 +15,8 @@ import { ReservasModule } from './reservas/reservas.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    AuthModule,
     
     // 2. Configura TypeORM asíncronamente para leer del ConfigService
     TypeOrmModule.forRootAsync({
