@@ -151,11 +151,59 @@ Actualmente el guard JWT protege la creación, actualización y eliminación de 
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
-| GET | `/menu` | Lista todos los productos |
+| GET | `/menu` | Busca, filtra, ordena y pagina los productos |
 | GET | `/menu/:id` | Consulta un producto |
 | POST | `/menu` | Crea un producto |
 | PATCH | `/menu/:id` | Actualiza parcialmente un producto |
 | DELETE | `/menu/:id` | Elimina un producto |
+
+### Consultas del menú
+
+`GET /menu` acepta los siguientes query params. Todos son opcionales:
+
+| Parámetro | Tipo | Valor por defecto | Descripción |
+| --- | --- | --- | --- |
+| `search` | string | Sin filtro | Busca en nombre, categoría y descripción. |
+| `categoria` | string | Sin filtro | Filtra por categoría. |
+| `sede` | string | Sin filtro | Filtra por sede. |
+| `minPrecio` | number >= 0 | Sin límite | Precio mínimo incluido. |
+| `maxPrecio` | number >= 0 | Sin límite | Precio máximo incluido. |
+| `page` | integer >= 1 | `1` | Número de página. |
+| `limit` | integer entre 1 y 100 | `10` | Cantidad de resultados por página. |
+| `sortBy` | `id`, `nombre`, `precio`, `categoria`, `sede` | `id` | Campo de ordenamiento. |
+| `order` | `ASC` o `DESC` | `ASC` | Dirección del ordenamiento. |
+
+Los query params inválidos devuelven `400 Bad Request`. Si `minPrecio` es mayor que `maxPrecio`, también se devuelve `400`.
+
+Ejemplo:
+
+```http
+GET http://localhost:3000/menu?search=hamburguesa&sede=Manta&minPrecio=5&page=1&limit=5&sortBy=precio&order=DESC
+```
+
+La respuesta incluye los productos de la página y metadatos de paginación:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "nombre": "Hamburguesa Tasty",
+      "precio": 5.99,
+      "categoria": "Hamburguesas",
+      "sede": "Manta"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 5,
+    "total": 12,
+    "totalPages": 3,
+    "hasNext": true,
+    "hasPrevious": false
+  }
+}
+```
 
 ### Ejemplo de creación
 
