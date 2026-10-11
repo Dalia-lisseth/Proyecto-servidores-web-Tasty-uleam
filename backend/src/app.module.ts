@@ -14,6 +14,10 @@ import { ReservasModule } from './reservas/reservas.module';
     // 1. Carga las variables de entorno de forma global
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        `.env.${process.env.NODE_ENV ?? 'development'}`,
+        '.env',
+      ],
     }),
 
     AuthModule,
@@ -30,7 +34,10 @@ import { ReservasModule } from './reservas/reservas.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true, // Carga automáticamente las entidades registradas
-        synchronize: true, // Sincroniza la estructura de la BD (ideal para desarrollo)
+        synchronize: false,
+        migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
+        migrationsRun:
+          configService.get<string>('DB_MIGRATIONS_RUN') === 'true',
       }),
     }),
 

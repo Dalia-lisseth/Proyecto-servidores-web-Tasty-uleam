@@ -76,6 +76,10 @@ src/
 ├── auth/
 │   ├── auth.module.ts
 │   └── jwt-auth.guard.ts
+├── database/
+│   ├── data-source.ts
+│   └── migrations/
+│       └── 1760092800000-CreateInitialSchema.ts
 ├── pedidos/
 │   ├── dto/
 │   ├── entities/
@@ -100,7 +104,7 @@ Requisitos: Node.js 18 o superior y PostgreSQL.
 npm ci
 ```
 
-Copia el archivo de variables:
+Copia el archivo de variables. Para desarrollo se puede usar `.env.development`; si no existe, se utiliza `.env`:
 
 ```bash
 copy .env.example .env
@@ -115,9 +119,31 @@ DB_USERNAME=postgres
 DB_PASSWORD=tu_clave_local
 DB_NAME=tasty_uleam
 JWT_SECRET=una_clave_larga_y_aleatoria
+DB_MIGRATIONS_RUN=false
 ```
 
-`JWT_SECRET` es obligatorio para iniciar la autenticación. No publiques `.env` ni credenciales reales.
+`JWT_SECRET` es obligatorio para iniciar la autenticación. `DB_MIGRATIONS_RUN` controla si NestJS ejecuta automáticamente las migraciones al arrancar; se recomienda mantenerlo en `false` y ejecutarlas explícitamente. No publiques `.env` ni credenciales reales.
+
+## Migraciones y configuración
+
+La aplicación no utiliza `synchronize`; el esquema de PostgreSQL se modifica únicamente mediante migraciones versionadas. La migración inicial crea las tablas `usuarios`, `menu_items`, `pedidos`, `reservas` y `pedido_items`, incluyendo sus claves foráneas.
+
+Desde la carpeta `backend`, ejecuta las migraciones antes de iniciar la API:
+
+```bash
+npm run migration:run
+npm run start:dev
+```
+
+Comandos disponibles:
+
+```bash
+npm run migration:show
+npm run migration:revert
+npm run migration:generate -- src/database/migrations/NombreDelCambio
+```
+
+Las migraciones nuevas deben revisarse antes de ejecutarse y mantenerse dentro de `src/database/migrations`. En producción se recomienda ejecutar `migration:run` como paso separado del despliegue.
 
 ## Ejecución
 
