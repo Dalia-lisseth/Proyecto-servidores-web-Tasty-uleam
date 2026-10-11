@@ -39,6 +39,7 @@ erDiagram
         string sede
         decimal total
         string estado
+        int usuarioId FK
     }
     RESERVA {
         int id PK
@@ -47,13 +48,44 @@ erDiagram
         date fechaReserva
         string sede
         string estado
+        int usuarioId FK
+    }
+    PEDIDO_ITEM {
+        int pedidoId PK, FK
+        int menuItemId PK, FK
     }
     USUARIO ||--o{ PEDIDO : realiza
-    MENU_ITEM }o--o{ PEDIDO : incluye
     USUARIO ||--o{ RESERVA : registra
+    PEDIDO ||--o{ PEDIDO_ITEM : contiene
+    MENU_ITEM ||--o{ PEDIDO_ITEM : incluye
 ```
 
 En esta etapa están implementadas las cuatro entidades: `Usuario`, `MenuItem`, `Pedido` y `Reserva`, con sus relaciones (un pedido pertenece a un usuario e incluye varios productos del menú; una reserva puede asociarse opcionalmente a un usuario registrado).
+
+### Requisitos técnicos cubiertos
+
+| Requisito | Implementación y evidencia |
+| --- | --- |
+| Continuidad | Se conservan el recurso principal `MenuItem`, sus DTOs y sus endpoints CRUD, junto con los módulos de usuarios, pedidos y reservas. |
+| Modelo relacional | `Pedido` se relaciona con `Usuario` y `MenuItem`; `Reserva` se relaciona opcionalmente con `Usuario`; las claves foráneas están definidas en la migración inicial. |
+| CRUD relacionado | Pedidos y reservas tienen CRUD validado; la creación de pedidos asocia un usuario y varios productos mediante IDs relacionados. |
+| Consultas | `GET /menu` admite búsqueda, filtros, paginación y ordenamiento, y devuelve metadatos de paginación. |
+| Migraciones y configuración | `synchronize: false`, configuración mediante variables de entorno y migraciones versionadas ejecutables con TypeORM. |
+| Autenticación | Registro con contraseña cifrada mediante `bcryptjs`, login y emisión de JWT; la contraseña no se devuelve. |
+| Rutas protegidas | `POST`, `PATCH` y `DELETE` de `/pedidos` exigen un token Bearer válido y devuelven `401` sin autenticación. |
+
+### Claves foráneas y reglas de borrado
+
+  Las claves foráneas se crean mediante la migración versionada `CreateInitialSchema1760092800000`:
+
+  | Tabla y columna | Referencia | Regla al eliminar el registro relacionado |
+  | --- | --- | --- |
+  | `pedidos.usuarioId` | `usuarios.id` | `CASCADE`: elimina los pedidos del usuario. |
+  | `reservas.usuarioId` | `usuarios.id` | `SET NULL`: conserva la reserva sin usuario asociado. |
+  | `pedido_items.pedidoId` | `pedidos.id` | `CASCADE`: elimina las filas de la tabla intermedia. |
+  | `pedido_items.menuItemId` | `menu_items.id` | `CASCADE`: elimina la relación del producto con los pedidos. |
+
+  `pedido_items` utiliza una clave primaria compuesta por `pedidoId` y `menuItemId`, evitando duplicar la misma relación entre un pedido y un producto. La aplicación mantiene `synchronize: false`; estas restricciones se gestionan exclusivamente mediante migraciones.
 
 ## 2. Arquitectura NestJS
 
@@ -350,11 +382,16 @@ La suite actual contiene pruebas unitarias básicas para el controlador principa
 - [ ] `GET /menu/:id` devuelve el registro solicitado.
 - [ ] `PATCH /menu/:id` conserva los campos no enviados.
 - [ ] `DELETE /menu/:id` elimina el registro.
+- [ ] `GET /menu?search=hamburguesa&page=1&limit=5&sortBy=precio&order=DESC` devuelve `data` y `meta` de paginación.
+- [ ] Un query param inválido de `/menu` devuelve `400`.
 - [ ] Un JSON inválido devuelve `400`.
 - [ ] Un identificador inexistente devuelve `404`.
 - [ ] El registro permanece después de reiniciar la API.
 - [ ] `POST /pedidos` calcula el total y crea el registro con `201`.
 - [ ] `POST /usuarios/login` devuelve `access_token` con credenciales válidas.
 - [ ] `POST`, `PATCH` y `DELETE` de `/pedidos` devuelven `401` sin un token Bearer válido.
+- [ ] Las mismas rutas funcionan con `Authorization: Bearer <access_token>` válido.
 - [ ] `POST /reservas` crea el registro con `201` y `estado` en `pendiente`.
-- [ ] pgAdmin muestra las tablas `public.menu_items`, `public.usuarios`, `public.pedidos` y `public.reservas`.
+- [ ] `npm run migration:show` marca la migración inicial como aplicada.
+- [ ] pgAdmin muestra las tablas `public.menu_items`, `public.usuarios`, `public.pedidos`, `public.reservas` y `public.pedido_items`.
+- [ ] pgAdmin muestra las claves foráneas y sus reglas `CASCADE`/`SET NULL`.
