@@ -73,6 +73,9 @@ src/
 │   ├── usuarios.controller.ts
 │   ├── usuarios.module.ts
 │   └── usuarios.service.ts
+├── auth/
+│   ├── auth.module.ts
+│   └── jwt-auth.guard.ts
 ├── pedidos/
 │   ├── dto/
 │   ├── entities/
@@ -111,9 +114,10 @@ DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=tu_clave_local
 DB_NAME=tasty_uleam
+JWT_SECRET=una_clave_larga_y_aleatoria
 ```
 
-No publiques `.env` ni credenciales reales.
+`JWT_SECRET` es obligatorio para iniciar la autenticación. No publiques `.env` ni credenciales reales.
 
 ## Ejecución
 
@@ -132,6 +136,16 @@ La aplicación activa `ValidationPipe` global con:
 - `forbidNonWhitelisted: true`
 
 Los servicios devuelven `404 Not Found` cuando no encuentran un registro y `400 Bad Request` ante datos inválidos. El correo duplicado de usuario devuelve `409 Conflict`.
+
+## Autenticación JWT
+
+El inicio de sesión valida la contraseña con `bcryptjs` y devuelve un token JWT con una vigencia de un día. Para las rutas protegidas se debe enviar:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+Actualmente el guard JWT protege la creación, actualización y eliminación de pedidos. Las consultas de pedidos (`GET`) y todos los endpoints de menú, usuarios y reservas permanecen públicos.
 
 ## Endpoints de menú
 
@@ -167,23 +181,39 @@ Content-Type: application/json
 | Método | Ruta | Descripción |
 | --- | --- | --- |
 | POST | `/usuarios` | Registra un usuario |
-| POST | `/usuarios/login` | Valida email y contraseña |
+| POST | `/usuarios/login` | Valida email y contraseña; devuelve un token JWT |
 | GET | `/usuarios` | Lista usuarios |
 | GET | `/usuarios/:id` | Consulta un usuario |
 | PATCH | `/usuarios/:id` | Actualiza parcialmente un usuario |
 | DELETE | `/usuarios/:id` | Elimina un usuario |
 
-Las contraseñas se almacenan con `bcryptjs` y no se incluyen en las respuestas. Esta etapa no exige tokens JWT.
+Las contraseñas se almacenan con `bcryptjs` y no se incluyen en las respuestas.
+
+### Ejemplo de inicio de sesión
+
+```http
+POST http://localhost:3000/usuarios/login
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "karla@ejemplo.com",
+  "password": "clave-segura"
+}
+```
+
+La respuesta incluye `access_token` y los datos públicos del usuario.
 
 ## Endpoints de pedidos
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
-| POST | `/pedidos` | Crea un pedido (calcula el total según los productos incluidos) |
+| POST | `/pedidos` | Crea un pedido (requiere JWT y calcula el total según los productos incluidos) |
 | GET | `/pedidos` | Lista todos los pedidos |
 | GET | `/pedidos/:id` | Consulta un pedido |
-| PATCH | `/pedidos/:id` | Actualiza parcialmente un pedido |
-| DELETE | `/pedidos/:id` | Elimina un pedido |
+| PATCH | `/pedidos/:id` | Actualiza parcialmente un pedido (requiere JWT) |
+| DELETE | `/pedidos/:id` | Elimina un pedido (requiere JWT) |
 
 El campo `total` se calcula automáticamente sumando el precio de los `itemIds` enviados; no se envía manualmente. El `estado` por defecto es `pendiente` y admite: `pendiente`, `en preparacion`, `listo`, `entregado`, `cancelado`.
 
@@ -237,7 +267,7 @@ npm run build
 npm test -- --runInBand
 ```
 
-La suite actual comprueba la creación de los componentes principales de los cuatro módulos. Las pruebas manuales del CRUD se ejecutan con Thunder Client.
+La suite actual contiene pruebas unitarias básicas para el controlador principal y el módulo de menú. Todavía no hay pruebas automatizadas específicas para autenticación, pedidos o reservas. Las pruebas manuales del CRUD y del flujo JWT se ejecutan con Thunder Client.
 
 ### Checklist de evidencia manual
 
@@ -250,5 +280,7 @@ La suite actual comprueba la creación de los componentes principales de los cua
 - [ ] Un identificador inexistente devuelve `404`.
 - [ ] El registro permanece después de reiniciar la API.
 - [ ] `POST /pedidos` calcula el total y crea el registro con `201`.
+- [ ] `POST /usuarios/login` devuelve `access_token` con credenciales válidas.
+- [ ] `POST`, `PATCH` y `DELETE` de `/pedidos` devuelven `401` sin un token Bearer válido.
 - [ ] `POST /reservas` crea el registro con `201` y `estado` en `pendiente`.
 - [ ] pgAdmin muestra las tablas `public.menu_items`, `public.usuarios`, `public.pedidos` y `public.reservas`.
